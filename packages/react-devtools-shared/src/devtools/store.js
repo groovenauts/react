@@ -10,6 +10,7 @@
 import EventEmitter from '../events';
 import {inspect} from 'util';
 import {
+  CHROME_WEBSTORE_EXTENSION_ID,
   PROFILING_FLAG_BASIC_SUPPORT,
   PROFILING_FLAG_TIMELINE_SUPPORT,
   TREE_OPERATION_ADD,
@@ -1052,6 +1053,10 @@ export default class Store extends EventEmitter<{|
               weight: 1,
             };
 
+            chrome.runtime.sendMessage({
+              reactComponent: true,
+              element: element,
+            });
             console.log('store.js element.displayName', element.displayName);
 
             this._idToElement.set(id, element);
