@@ -116,32 +116,75 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((request, sender) => {
-  console.log('background.js Received message from content script:', request);
-  console.log('background.js process.env', process.env);
-  console.log('background.js process.cwd()', process.cwd());
+const reactComponentDisplayNames = new Set();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('background.js Received from content script:', {request, sender});
+
+  // console.log('background.js Received message from content script:', request);
+  // console.log('background.js process.env', process.env);
+  // console.log('background.js process.cwd()', process.cwd());
 
   const tab = sender.tab;
   if (tab) {
     const id = tab.id;
     // This is sent from the hook content script.
     // It tells us a renderer has attached.
-    if (request.hasDetectedReact) {
-      // We use browserAction instead of pageAction because this lets us
-      // display a custom default popup when React is *not* detected.
-      // It is specified in the manifest.
-      setIconAndPopup(request.reactBuildType, id);
+    if (request.reactComponent) {
+      reactComponentDisplayNames.add(request.element.displayName);
+      // console.log(
+      //   'background.js Received reactComponent message',
+      //   request.element.displayName,
+      // );
+      console.log(
+        'background.js reactComponentDisplayNames',
+        reactComponentDisplayNames,
+      );
+      // localStorage.set(
+      //   'reactComponentDisplayNames',
+      //   JSON.stringify(reactComponentDisplayNames),
+      // );
+      return true;
     } else {
-      switch (request.payload?.type) {
-        case 'fetch-file-with-cache-complete':
-        case 'fetch-file-with-cache-error':
-          // Forward the result of fetch-in-page requests back to the extension.
-          const devtools = ports[id]?.devtools;
-          if (devtools) {
-            devtools.postMessage(request);
-          }
-          break;
+      // console.log('background.js Received from content script:', request);
+      if (request.hasDetectedReact) {
+        // We use browserAction instead of pageAction because this lets us
+        // display a custom default popup when React is *not* detected.
+        // It is specified in the manifest.
+        setIconAndPopup(request.reactBuildType, id);
+        return true;
+      } else {
+        switch (request.payload?.type) {
+          case 'fetch-file-with-cache-complete':
+          case 'fetch-file-with-cache-error':
+            // Forward the result of fetch-in-page requests back to the extension.
+            const devtools = ports[id]?.devtools;
+            if (devtools) {
+              devtools.postMessage(request);
+            }
+            break;
+        }
+        return true;
       }
     }
+  } else {
+    if (request.queryReactComponents) {
+      console.log(
+        'background.js Received queryReactComponents reactComponentDisplayNames:',
+        reactComponentDisplayNames,
+      );
+      // sendResponse(reactComponentDisplayNames);
+      // sendResponse({response: 'バックグラウンドスクリプトからの応答です'});
+      // return true;
+      // return Promise.resolve({
+      //   response: 'バックグラウンドスクリプトからの応答です',
+      // });
+
+      // setTimeout(function() {
+      sendResponse({nameSet: Array.from(reactComponentDisplayNames).sort()});
+      // }, 100);
+      return true;
+    }
   }
+  return true;
 });
