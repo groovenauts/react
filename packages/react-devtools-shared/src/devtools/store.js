@@ -915,6 +915,9 @@ export default class Store extends EventEmitter<{|
       i += nextLength;
     }
 
+    console.log('store.js process.env', process.env);
+    console.log('store.js process.cwd()', process.cwd());
+
     while (i < operations.length) {
       const operation = operations[i];
       switch (operation) {
@@ -1048,6 +1051,8 @@ export default class Store extends EventEmitter<{|
               type,
               weight: 1,
             };
+
+            console.log('store.js element.displayName', element.displayName);
 
             this._idToElement.set(id, element);
             addedElementIDs.push(id);

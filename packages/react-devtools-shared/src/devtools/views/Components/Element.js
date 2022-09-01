@@ -123,6 +123,8 @@ export default function Element({data, index, style}: Props) {
     type,
   } = ((element: any): ElementType);
 
+  console.log('Element.js element', element);
+
   // Only show strict mode non-compliance badges for top level elements.
   // Showing an inline badge for every element in the tree would be noisy.
   const showStrictModeBadge = isStrictModeNonCompliant && depth === 0;

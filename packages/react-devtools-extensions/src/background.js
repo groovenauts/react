@@ -117,6 +117,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender) => {
+  console.log('background.js Received message from content script:', request);
+  console.log('background.js process.env', process.env);
+  console.log('background.js process.cwd()', process.cwd());
+
   const tab = sender.tab;
   if (tab) {
     const id = tab.id;
