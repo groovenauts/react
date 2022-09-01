@@ -22,4 +22,34 @@ document.addEventListener('DOMContentLoaded', function() {
   requestAnimationFrame(function() {
     document.body.style.opacity = 1;
   });
+
+  const button = document.getElementById('refresh_component_name_area');
+  console.log('shared.js button:', button);
+  if (button) {
+    button.addEventListener('click', () => {
+      console.log('shared.js clicked');
+      const msg = chrome.runtime.sendMessage(
+        {
+          source: 'shared.js',
+          queryReactComponents: true,
+        },
+        response => {
+          console.log('shared.js resp:', response);
+          if (response) {
+            const area = document.getElementById('component_name_area');
+            console.log('shared.js area:', area);
+            if (area) {
+              area.innerHTML = response.nameSet.join('\n');
+            }
+          } else {
+            console.log(
+              'shared.js chrome.runtime.lastError:',
+              chrome.runtime.lastError
+            );
+          }
+        }
+      );
+      console.log('shared.js sendMessage result:', msg);
+    });
+  }
 });
