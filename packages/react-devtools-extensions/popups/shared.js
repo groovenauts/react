@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const area = document.getElementById('component_name_area');
             console.log('shared.js area:', area);
             if (area) {
-              area.innerHTML = response.nameSet.join('\n');
+              area.innerHTML = JSON.stringify(response.namesMap, null, 2);
             }
           } else {
             console.log(
