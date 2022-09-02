@@ -7,6 +7,7 @@ const ports = {};
 const IS_FIREFOX = navigator.userAgent.indexOf('Firefox') >= 0;
 
 chrome.runtime.onConnect.addListener(function(port) {
+  console.log('background.js chrome.runtime.onConnect port:', port);
   let tab = null;
   let name = null;
   if (isNumeric(port.name)) {
@@ -116,36 +117,84 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-const reactComponentDisplayNames = new Set();
+class ReactComponentPool {
+  constructor() {
+    console.log('background.js ReactComponentPool is created');
+    this._impl = undefined;
+    this.storageKey = 'react-component-pool';
+  }
+  get impl() {
+    if (this._impl === undefined) {
+      // const raw = localStorage.getItem(this.storageKey) || '[]';
+      // this._impl = JSON.parse(raw);
+      this._impl = [];
+    }
+    return this._impl;
+  }
+
+  save() {
+    if (this._impl === undefined) return;
+    // localStorage.setItem(this.storageKey, JSON.stringify(this._impl));
+    console.log('background.js ReactComponentPool.save done');
+  }
+
+  add(component) {
+    if (!this.impl.includes(component)) {
+      console.log('background.js ReactComponentPool.add', component);
+      this.impl.push(component);
+      this.save();
+    }
+  }
+  all() {
+    console.log('background.js ReactComponentPool.all');
+    return this.impl.sort();
+  }
+}
+
+const reactComponentPool = new ReactComponentPool();
+window.getReactComponentDisplayNames = () => {
+  const res = reactComponentPool.all();
+  console.log('background.js getReactComponentDisplayNames', res);
+  return res;
+};
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('background.js Received from content script:', {request, sender});
+  // console.log('background.js Received from content script:', {request, sender});
 
   // console.log('background.js Received message from content script:', request);
   // console.log('background.js process.env', process.env);
   // console.log('background.js process.cwd()', process.cwd());
 
-  const tab = sender.tab;
-  if (tab) {
-    const id = tab.id;
-    // This is sent from the hook content script.
-    // It tells us a renderer has attached.
-    if (request.reactComponent) {
-      reactComponentDisplayNames.add(request.element.displayName);
-      // console.log(
-      //   'background.js Received reactComponent message',
-      //   request.element.displayName,
-      // );
-      console.log(
-        'background.js reactComponentDisplayNames',
-        reactComponentDisplayNames,
-      );
-      // localStorage.set(
-      //   'reactComponentDisplayNames',
-      //   JSON.stringify(reactComponentDisplayNames),
-      // );
-      return true;
-    } else {
+  if (request.reactComponent) {
+    console.log('background.js Received to add component sender:', sender);
+    reactComponentPool.add(request.element.displayName);
+    // console.log(
+    //   'background.js Received reactComponent message',
+    //   request.element.displayName,
+    // );
+    // localStorage.set(
+    //   'reactComponentDisplayNames',
+    //   JSON.stringify(reactComponentDisplayNames),
+    // );
+    return true;
+  } else if (request.queryReactComponents) {
+    // sendResponse(reactComponentDisplayNames);
+    // sendResponse({response: 'バックグラウンドスクリプトからの応答です'});
+    // return true;
+    // return Promise.resolve({
+    //   response: 'バックグラウンドスクリプトからの応答です',
+    // });
+
+    // setTimeout(function() {
+    sendResponse({nameSet: reactComponentPool.all()});
+    // }, 100);
+    return true;
+  } else {
+    const tab = sender.tab;
+    if (tab) {
+      const id = tab.id;
+      // This is sent from the hook content script.
+      // It tells us a renderer has attached.
       // console.log('background.js Received from content script:', request);
       if (request.hasDetectedReact) {
         // We use browserAction instead of pageAction because this lets us
@@ -167,24 +216,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
       }
     }
-  } else {
-    if (request.queryReactComponents) {
-      console.log(
-        'background.js Received queryReactComponents reactComponentDisplayNames:',
-        reactComponentDisplayNames,
-      );
-      // sendResponse(reactComponentDisplayNames);
-      // sendResponse({response: 'バックグラウンドスクリプトからの応答です'});
-      // return true;
-      // return Promise.resolve({
-      //   response: 'バックグラウンドスクリプトからの応答です',
-      // });
-
-      // setTimeout(function() {
-      sendResponse({nameSet: Array.from(reactComponentDisplayNames).sort()});
-      // }, 100);
-      return true;
-    }
   }
+
   return true;
 });
