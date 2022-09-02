@@ -155,7 +155,8 @@ class ReactComponentPool {
 }
 
 const reactComponentPool = new ReactComponentPool();
-window.reactComponentPool = reactComponentPool;
+window.setReactComponentPoolKey = key => reactComponentPool.setKey(key);
+window.getReactComponents = () => reactComponentPool.all();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // console.log('background.js Received from content script:', {request, sender});
